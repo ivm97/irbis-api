@@ -4,12 +4,12 @@ info:
   description: |
     REST gateway for IRBIS64.
 
-    Auth headers: `X-API-User`, `X-API-Password`.
-    Optional ARM: `X-Irbis-Workstation` (`A|C|M|R|B|K`). Default is Cataloger (`C`)
-    from server config / `IRBIS_WORKSTATION`.
+    Auth: cookies after `POST /v1/login`, or headers `X-API-User` / `X-API-Password`.
+    Optional ARM: `X-Irbis-Workstation` or cookie / login body (`A|C|M|R|B|K`).
+    Default Cataloger (`C`) from `IRBIS_WORKSTATION`.
 
     Record JSON uses `fields` array with numeric `tag` (MARC/IRBIS repeats-friendly).
-  version: 1.1.0
+  version: 1.2.0
 
 servers:
   - url: http://localhost:8080
@@ -37,6 +37,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
+
+  /v1/login:
+    post:
+      tags: [meta]
+      summary: Login and set HttpOnly auth cookies
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+                workstation: { type: string, enum: [A, C, M, R, B, K] }
+      responses:
+        "200":
+          description: Logged in (Set-Cookie)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/logout:
+    post:
+      tags: [meta]
+      summary: Clear auth cookies
+      operationId: logout
+      security: []
+      responses:
+        "204":
+          description: Logged out
 
   /v1/me:
     get:
@@ -397,12 +434,14 @@ components:
     AuthUser:
       name: X-API-User
       in: header
-      required: true
+      required: false
+      description: Optional if auth cookies from /v1/login are present.
       schema: { type: string }
     AuthPassword:
       name: X-API-Password
       in: header
-      required: true
+      required: false
+      description: Optional if auth cookies from /v1/login are present.
       schema: { type: string, format: password }
     Workstation:
       name: X-Irbis-Workstation

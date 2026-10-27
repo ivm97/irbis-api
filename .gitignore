@@ -1,5 +1,4 @@
 /bin/
-/configs/config.yaml
-/configs/users.yaml
 .env
+users.txt
 *.exe

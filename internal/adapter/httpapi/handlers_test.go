@@ -232,3 +232,43 @@ func TestForbiddenWrite(t *testing.T) {
 		t.Fatalf("%d %s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestLoginCookies(t *testing.T) {
+	e, cat := newTestEcho(t)
+	rec := doReq(t, e, http.MethodPost, "/v1/login", loginBody{
+		Username: "librarian", Password: "secret", Workstation: "R",
+	}, nil)
+	if rec.Code != 200 {
+		t.Fatalf("login %d %s", rec.Code, rec.Body.String())
+	}
+	cookies := rec.Result().Cookies()
+	req := httptest.NewRequest(http.MethodGet, "/v1/me", nil)
+	for _, ck := range cookies {
+		req.AddCookie(ck)
+	}
+	rec2 := httptest.NewRecorder()
+	e.ServeHTTP(rec2, req)
+	if rec2.Code != 200 {
+		t.Fatalf("me via cookie %d %s", rec2.Code, rec2.Body.String())
+	}
+
+	req3 := httptest.NewRequest(http.MethodGet, "/v1/databases/IBIS/records/search?mode=all&limit=1", nil)
+	for _, ck := range cookies {
+		req3.AddCookie(ck)
+	}
+	rec3 := httptest.NewRecorder()
+	e.ServeHTTP(rec3, req3)
+	if rec3.Code != 200 {
+		t.Fatalf("search %d %s", rec3.Code, rec3.Body.String())
+	}
+	if cat.lastWS != domain.ARMReader {
+		t.Fatalf("ws=%q", cat.lastWS)
+	}
+
+	req4 := httptest.NewRequest(http.MethodPost, "/v1/logout", nil)
+	rec4 := httptest.NewRecorder()
+	e.ServeHTTP(rec4, req4)
+	if rec4.Code != 204 {
+		t.Fatalf("logout %d", rec4.Code)
+	}
+}

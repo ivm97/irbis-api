@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -19,15 +18,12 @@ import (
 )
 
 func main() {
-	cfgPath := flag.String("config", "configs/config.example.yaml", "path to config YAML")
-	flag.Parse()
-
-	cfg, err := config.Load(*cfgPath)
+	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("config: %v", err)
 	}
 
-	auth, err := authfile.New(cfg.Auth.UsersFile, cfg.Auth.AllowPlaintext)
+	auth, err := authfile.New(cfg.Auth.Users, cfg.Auth.UsersFile, cfg.Auth.AllowPlaintext)
 	if err != nil {
 		log.Fatalf("users: %v", err)
 	}
@@ -60,6 +56,14 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.Logger())
 	e.Use(middleware.RequestID())
+	if origin := cfg.HTTP.CORSAllowOrigin; origin != "" {
+		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+			AllowOrigins:     []string{origin},
+			AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+			AllowHeaders:     []string{echo.HeaderContentType, "X-API-User", "X-API-Password", "X-Irbis-Workstation"},
+			AllowCredentials: true,
+		}))
+	}
 
 	httpapi.NewHandler(svc).Register(e)
 

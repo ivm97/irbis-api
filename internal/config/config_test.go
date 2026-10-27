@@ -6,47 +6,74 @@ import (
 	"testing"
 )
 
-func TestLoad_EnvAndDotEnv(t *testing.T) {
+func TestLoad_FromDotEnv(t *testing.T) {
 	dir := t.TempDir()
-	cfgPath := filepath.Join(dir, "config.yaml")
-	_ = os.WriteFile(cfgPath, []byte(`
-http:
-  addr: ":9"
-auth:
-  users_file: users.yaml
-  allow_plaintext: true
-irbis:
-  host: "yaml-host"
-  port: 1111
-  workstation: "C"
-  use_request_credentials: true
-`), 0o600)
-
 	envPath := filepath.Join(dir, ".env")
-	_ = os.WriteFile(envPath, []byte("IRBIS_HOST=env-host\nIRBIS_WORKSTATION=R\n"), 0o600)
-
-	t.Setenv("IRBIS_PORT", "2222")
-	// Ensure IRBIS_HOST is not set so .env can apply after chdir.
-	_ = os.Unsetenv("IRBIS_HOST")
-	_ = os.Unsetenv("IRBIS_WORKSTATION")
-
-	wd, _ := os.Getwd()
-	if err := os.Chdir(dir); err != nil {
+	content := "" +
+		"HTTP_ADDR=:9090\n" +
+		"IRBIS_HOST=env-host\n" +
+		"IRBIS_PORT=2222\n" +
+		"IRBIS_WORKSTATION=R\n" +
+		"AUTH_USERS=librarian|secret|IBIS=read\n"
+	if err := os.WriteFile(envPath, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chdir(wd) })
 
-	cfg, err := Load(cfgPath)
+	clearEnv(t,
+		"HTTP_ADDR", "IRBIS_HOST", "IRBIS_PORT", "IRBIS_WORKSTATION",
+		"AUTH_USERS", "AUTH_USERS_FILE", "ENV_FILE",
+		"IRBIS_USE_REQUEST_CREDENTIALS",
+	)
+	t.Setenv("ENV_FILE", envPath)
+
+	cfg, err := Load()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Irbis.Host != "env-host" {
-		t.Fatalf("host=%q", cfg.Irbis.Host)
-	}
-	if cfg.Irbis.Port != 2222 {
-		t.Fatalf("port=%d", cfg.Irbis.Port)
+	if cfg.HTTP.Addr != ":9090" || cfg.Irbis.Host != "env-host" || cfg.Irbis.Port != 2222 {
+		t.Fatalf("%+v", cfg)
 	}
 	if cfg.Irbis.Workstation != "R" {
 		t.Fatalf("ws=%q", cfg.Irbis.Workstation)
+	}
+	if cfg.Auth.Users == "" {
+		t.Fatal("users empty")
+	}
+	if !cfg.Irbis.UseRequestCredentials {
+		t.Fatal("default use_request_credentials should be true")
+	}
+}
+
+func TestLoad_ProcessEnvWinsOverDotEnv(t *testing.T) {
+	dir := t.TempDir()
+	envPath := filepath.Join(dir, ".env")
+	_ = os.WriteFile(envPath, []byte("IRBIS_HOST=from-file\nAUTH_USERS=u|p|IBIS=read\n"), 0o600)
+
+	clearEnv(t, "IRBIS_HOST", "AUTH_USERS", "AUTH_USERS_FILE", "ENV_FILE")
+	t.Setenv("ENV_FILE", envPath)
+	t.Setenv("IRBIS_HOST", "from-process")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Irbis.Host != "from-process" {
+		t.Fatalf("host=%q", cfg.Irbis.Host)
+	}
+}
+
+func TestLoad_RequiresUsers(t *testing.T) {
+	clearEnv(t, "AUTH_USERS", "AUTH_USERS_FILE", "ENV_FILE", "IRBIS_WORKSTATION")
+	t.Setenv("ENV_FILE", filepath.Join(t.TempDir(), "missing.env"))
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func clearEnv(t *testing.T, keys ...string) {
+	t.Helper()
+	for _, k := range keys {
+		_ = os.Unsetenv(k)
 	}
 }

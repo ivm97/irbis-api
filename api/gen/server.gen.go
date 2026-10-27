@@ -156,6 +156,16 @@ const (
 	ListTermsParamsXIrbisWorkstationR ListTermsParamsXIrbisWorkstation = "R"
 )
 
+// Defines values for LoginJSONBodyWorkstation.
+const (
+	A LoginJSONBodyWorkstation = "A"
+	B LoginJSONBodyWorkstation = "B"
+	C LoginJSONBodyWorkstation = "C"
+	K LoginJSONBodyWorkstation = "K"
+	M LoginJSONBodyWorkstation = "M"
+	R LoginJSONBodyWorkstation = "R"
+)
+
 // CountResponse defines model for CountResponse.
 type CountResponse struct {
 	Expression string `json:"expression"`
@@ -362,8 +372,11 @@ type Unauthorized = Error
 
 // GetConfigParams defines parameters for GetConfig.
 type GetConfigParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *GetConfigParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -374,8 +387,11 @@ type GetConfigParamsXIrbisWorkstation string
 
 // CreateRecordParams defines parameters for CreateRecord.
 type CreateRecordParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *CreateRecordParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -386,8 +402,11 @@ type CreateRecordParamsXIrbisWorkstation string
 
 // PutRecordsBatchParams defines parameters for PutRecordsBatch.
 type PutRecordsBatchParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *PutRecordsBatchParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -398,11 +417,15 @@ type PutRecordsBatchParamsXIrbisWorkstation string
 
 // CountRecordsParams defines parameters for CountRecords.
 type CountRecordsParams struct {
-	Expression   *string      `form:"expression,omitempty" json:"expression,omitempty"`
-	Mode         *SearchMode  `form:"mode,omitempty" json:"mode,omitempty"`
-	Value        *string      `form:"value,omitempty" json:"value,omitempty"`
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	Expression *string     `form:"expression,omitempty" json:"expression,omitempty"`
+	Mode       *SearchMode `form:"mode,omitempty" json:"mode,omitempty"`
+	Value      *string     `form:"value,omitempty" json:"value,omitempty"`
+
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *CountRecordsParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -413,8 +436,11 @@ type CountRecordsParamsXIrbisWorkstation string
 
 // RunGlobalCorrectionParams defines parameters for RunGlobalCorrection.
 type RunGlobalCorrectionParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *RunGlobalCorrectionParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -432,11 +458,15 @@ type SearchRecordsParams struct {
 	Limit      *int        `form:"limit,omitempty" json:"limit,omitempty"`
 
 	// Offset Skip N hits (0-based). Mapped to IRBIS FirstRecord = offset+1.
-	Offset       *int         `form:"offset,omitempty" json:"offset,omitempty"`
-	Format       *string      `form:"format,omitempty" json:"format,omitempty"`
-	WithRecords  *bool        `form:"with_records,omitempty" json:"with_records,omitempty"`
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	Offset      *int    `form:"offset,omitempty" json:"offset,omitempty"`
+	Format      *string `form:"format,omitempty" json:"format,omitempty"`
+	WithRecords *bool   `form:"with_records,omitempty" json:"with_records,omitempty"`
+
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *SearchRecordsParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -447,8 +477,11 @@ type SearchRecordsParamsXIrbisWorkstation string
 
 // SearchRecordsAdvancedParams defines parameters for SearchRecordsAdvanced.
 type SearchRecordsAdvancedParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *SearchRecordsAdvancedParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -459,8 +492,11 @@ type SearchRecordsAdvancedParamsXIrbisWorkstation string
 
 // DeleteRecordParams defines parameters for DeleteRecord.
 type DeleteRecordParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *DeleteRecordParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -471,9 +507,13 @@ type DeleteRecordParamsXIrbisWorkstation string
 
 // GetRecordParams defines parameters for GetRecord.
 type GetRecordParams struct {
-	Format       *string      `form:"format,omitempty" json:"format,omitempty"`
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	Format *string `form:"format,omitempty" json:"format,omitempty"`
+
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *GetRecordParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -484,8 +524,11 @@ type GetRecordParamsXIrbisWorkstation string
 
 // PutRecordParams defines parameters for PutRecord.
 type PutRecordParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *PutRecordParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -496,10 +539,14 @@ type PutRecordParamsXIrbisWorkstation string
 
 // ListTermsParams defines parameters for ListTerms.
 type ListTermsParams struct {
-	Start        string       `form:"start" json:"start"`
-	Limit        *int         `form:"limit,omitempty" json:"limit,omitempty"`
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	Start string `form:"start" json:"start"`
+	Limit *int   `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 
 	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
 	XIrbisWorkstation *ListTermsParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
@@ -508,10 +555,23 @@ type ListTermsParams struct {
 // ListTermsParamsXIrbisWorkstation defines parameters for ListTerms.
 type ListTermsParamsXIrbisWorkstation string
 
+// LoginJSONBody defines parameters for Login.
+type LoginJSONBody struct {
+	Password    string                    `json:"password"`
+	Username    string                    `json:"username"`
+	Workstation *LoginJSONBodyWorkstation `json:"workstation,omitempty"`
+}
+
+// LoginJSONBodyWorkstation defines parameters for Login.
+type LoginJSONBodyWorkstation string
+
 // GetMeParams defines parameters for GetMe.
 type GetMeParams struct {
-	XAPIUser     AuthUser     `json:"X-API-User"`
-	XAPIPassword AuthPassword `json:"X-API-Password"`
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 }
 
 // CreateRecordJSONRequestBody defines body for CreateRecord for application/json ContentType.
@@ -528,6 +588,9 @@ type SearchRecordsAdvancedJSONRequestBody = SearchRequest
 
 // PutRecordJSONRequestBody defines body for PutRecord for application/json ContentType.
 type PutRecordJSONRequestBody = RecordWrite
+
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody LoginJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -567,6 +630,12 @@ type ServerInterface interface {
 	// Browse dictionary terms
 	// (GET /v1/databases/{database}/terms)
 	ListTerms(ctx echo.Context, database Database, params ListTermsParams) error
+	// Login and set HttpOnly auth cookies
+	// (POST /v1/login)
+	Login(ctx echo.Context) error
+	// Clear auth cookies
+	// (POST /v1/logout)
+	Logout(ctx echo.Context) error
 	// Current API user (databases and rights)
 	// (GET /v1/me)
 	GetMe(ctx echo.Context, params GetMeParams) error
@@ -596,7 +665,7 @@ func (w *ServerInterfaceWrapper) GetConfig(ctx echo.Context) error {
 	var params GetConfigParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -604,16 +673,14 @@ func (w *ServerInterfaceWrapper) GetConfig(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -621,14 +688,12 @@ func (w *ServerInterfaceWrapper) GetConfig(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -668,7 +733,7 @@ func (w *ServerInterfaceWrapper) CreateRecord(ctx echo.Context) error {
 	var params CreateRecordParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -676,16 +741,14 @@ func (w *ServerInterfaceWrapper) CreateRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -693,14 +756,12 @@ func (w *ServerInterfaceWrapper) CreateRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -740,7 +801,7 @@ func (w *ServerInterfaceWrapper) PutRecordsBatch(ctx echo.Context) error {
 	var params PutRecordsBatchParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -748,16 +809,14 @@ func (w *ServerInterfaceWrapper) PutRecordsBatch(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -765,14 +824,12 @@ func (w *ServerInterfaceWrapper) PutRecordsBatch(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -832,7 +889,7 @@ func (w *ServerInterfaceWrapper) CountRecords(ctx echo.Context) error {
 	}
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -840,16 +897,14 @@ func (w *ServerInterfaceWrapper) CountRecords(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -857,14 +912,12 @@ func (w *ServerInterfaceWrapper) CountRecords(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -904,7 +957,7 @@ func (w *ServerInterfaceWrapper) RunGlobalCorrection(ctx echo.Context) error {
 	var params RunGlobalCorrectionParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -912,16 +965,14 @@ func (w *ServerInterfaceWrapper) RunGlobalCorrection(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -929,14 +980,12 @@ func (w *ServerInterfaceWrapper) RunGlobalCorrection(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -1024,7 +1073,7 @@ func (w *ServerInterfaceWrapper) SearchRecords(ctx echo.Context) error {
 	}
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -1032,16 +1081,14 @@ func (w *ServerInterfaceWrapper) SearchRecords(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -1049,14 +1096,12 @@ func (w *ServerInterfaceWrapper) SearchRecords(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -1096,7 +1141,7 @@ func (w *ServerInterfaceWrapper) SearchRecordsAdvanced(ctx echo.Context) error {
 	var params SearchRecordsAdvancedParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -1104,16 +1149,14 @@ func (w *ServerInterfaceWrapper) SearchRecordsAdvanced(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -1121,14 +1164,12 @@ func (w *ServerInterfaceWrapper) SearchRecordsAdvanced(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -1176,7 +1217,7 @@ func (w *ServerInterfaceWrapper) DeleteRecord(ctx echo.Context) error {
 	var params DeleteRecordParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -1184,16 +1225,14 @@ func (w *ServerInterfaceWrapper) DeleteRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -1201,14 +1240,12 @@ func (w *ServerInterfaceWrapper) DeleteRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -1262,7 +1299,7 @@ func (w *ServerInterfaceWrapper) GetRecord(ctx echo.Context) error {
 	}
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -1270,16 +1307,14 @@ func (w *ServerInterfaceWrapper) GetRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -1287,14 +1322,12 @@ func (w *ServerInterfaceWrapper) GetRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -1342,7 +1375,7 @@ func (w *ServerInterfaceWrapper) PutRecord(ctx echo.Context) error {
 	var params PutRecordParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -1350,16 +1383,14 @@ func (w *ServerInterfaceWrapper) PutRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -1367,14 +1398,12 @@ func (w *ServerInterfaceWrapper) PutRecord(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -1427,7 +1456,7 @@ func (w *ServerInterfaceWrapper) ListTerms(ctx echo.Context) error {
 	}
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -1435,16 +1464,14 @@ func (w *ServerInterfaceWrapper) ListTerms(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -1452,14 +1479,12 @@ func (w *ServerInterfaceWrapper) ListTerms(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
@@ -1482,6 +1507,24 @@ func (w *ServerInterfaceWrapper) ListTerms(ctx echo.Context) error {
 	return err
 }
 
+// Login converts echo context to params.
+func (w *ServerInterfaceWrapper) Login(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.Login(ctx)
+	return err
+}
+
+// Logout converts echo context to params.
+func (w *ServerInterfaceWrapper) Logout(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.Logout(ctx)
+	return err
+}
+
 // GetMe converts echo context to params.
 func (w *ServerInterfaceWrapper) GetMe(ctx echo.Context) error {
 	var err error
@@ -1492,7 +1535,7 @@ func (w *ServerInterfaceWrapper) GetMe(ctx echo.Context) error {
 	var params GetMeParams
 
 	headers := ctx.Request().Header
-	// ------------- Required header parameter "X-API-User" -------------
+	// ------------- Optional header parameter "X-API-User" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
 		var XAPIUser AuthUser
 		n := len(valueList)
@@ -1500,16 +1543,14 @@ func (w *ServerInterfaceWrapper) GetMe(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
 		}
 
-		params.XAPIUser = XAPIUser
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-User is required, but not found"))
+		params.XAPIUser = &XAPIUser
 	}
-	// ------------- Required header parameter "X-API-Password" -------------
+	// ------------- Optional header parameter "X-API-Password" -------------
 	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
 		var XAPIPassword AuthPassword
 		n := len(valueList)
@@ -1517,14 +1558,12 @@ func (w *ServerInterfaceWrapper) GetMe(ctx echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
 		}
 
-		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
 		}
 
-		params.XAPIPassword = XAPIPassword
-	} else {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Header parameter X-API-Password is required, but not found"))
+		params.XAPIPassword = &XAPIPassword
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
@@ -1572,6 +1611,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/v1/databases/:database/records/:mfn", wrapper.GetRecord)
 	router.PUT(baseURL+"/v1/databases/:database/records/:mfn", wrapper.PutRecord)
 	router.GET(baseURL+"/v1/databases/:database/terms", wrapper.ListTerms)
+	router.POST(baseURL+"/v1/login", wrapper.Login)
+	router.POST(baseURL+"/v1/logout", wrapper.Logout)
 	router.GET(baseURL+"/v1/me", wrapper.GetMe)
 
 }

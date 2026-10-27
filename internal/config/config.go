@@ -8,54 +8,57 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/ivm97/irbis-api/internal/domain"
 )
 
 type Config struct {
-	HTTP  HTTPConfig  `yaml:"http"`
-	Auth  AuthConfig  `yaml:"auth"`
-	Irbis IrbisConfig `yaml:"irbis"`
+	HTTP  HTTPConfig
+	Auth  AuthConfig
+	Irbis IrbisConfig
 }
 
 type HTTPConfig struct {
-	Addr string `yaml:"addr"`
+	Addr           string
+	CORSAllowOrigin string // e.g. http://localhost:5173; empty = no CORS middleware
 }
 
 type AuthConfig struct {
-	UsersFile      string `yaml:"users_file"`
-	AllowPlaintext bool   `yaml:"allow_plaintext"`
+	// Users is the raw AUTH_USERS value (see ParseUsers).
+	Users          string
+	UsersFile      string
+	AllowPlaintext bool
 }
 
 type IrbisConfig struct {
-	Host                  string        `yaml:"host"`
-	Port                  int           `yaml:"port"`
-	Workstation           string        `yaml:"workstation"`
-	DefaultDatabase       string        `yaml:"default_database"`
-	DialTimeout           time.Duration `yaml:"dial_timeout"`
-	IOTimeout             time.Duration `yaml:"io_timeout"`
-	UseRequestCredentials bool          `yaml:"use_request_credentials"`
-	ServiceUsername       string        `yaml:"service_username"`
-	ServicePassword       string        `yaml:"service_password"`
-	DatabasesMenu         string        `yaml:"databases_menu"`
+	Host                  string
+	Port                  int
+	Workstation           string
+	DefaultDatabase       string
+	DialTimeout           time.Duration
+	IOTimeout             time.Duration
+	UseRequestCredentials bool
+	ServiceUsername       string
+	ServicePassword       string
+	DatabasesMenu         string
 }
 
-// Load reads YAML config, then overlays environment / optional .env file.
-func Load(path string) (Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return Config{}, fmt.Errorf("read config: %w", err)
+// Load reads optional .env (ENV_FILE or .env), then builds config from process env.
+func Load() (Config, error) {
+	envFile := os.Getenv("ENV_FILE")
+	if envFile == "" {
+		envFile = ".env"
 	}
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return Config{}, fmt.Errorf("parse config: %w", err)
-	}
-	_ = loadDotEnv(".env")
+	_ = loadDotEnv(envFile)
+
+	cfg := Config{}
 	cfg.applyEnv()
 	cfg.applyDefaults()
+
 	if _, err := domain.NormalizeWorkstation(cfg.Irbis.Workstation, domain.ARMCataloger); err != nil {
-		return Config{}, fmt.Errorf("irbis.workstation: %w", err)
+		return Config{}, fmt.Errorf("IRBIS_WORKSTATION: %w", err)
+	}
+	if cfg.Auth.Users == "" && cfg.Auth.UsersFile == "" {
+		return Config{}, fmt.Errorf("set AUTH_USERS or AUTH_USERS_FILE")
 	}
 	return cfg, nil
 }
@@ -79,32 +82,31 @@ func (c *Config) applyDefaults() {
 	if c.Irbis.DatabasesMenu == "" {
 		c.Irbis.DatabasesMenu = "1..dbnam2.mnu"
 	}
+	// Default: request credentials go to IRBIS unless explicitly disabled.
+	if os.Getenv("IRBIS_USE_REQUEST_CREDENTIALS") == "" {
+		c.Irbis.UseRequestCredentials = true
+	}
 }
 
 func (c *Config) applyEnv() {
-	if v := os.Getenv("HTTP_ADDR"); v != "" {
-		c.HTTP.Addr = v
-	}
-	if v := os.Getenv("AUTH_USERS_FILE"); v != "" {
-		c.Auth.UsersFile = v
-	}
+	c.HTTP.Addr = os.Getenv("HTTP_ADDR")
+	c.HTTP.CORSAllowOrigin = os.Getenv("CORS_ALLOW_ORIGIN")
+	c.Auth.Users = os.Getenv("AUTH_USERS")
+	c.Auth.UsersFile = os.Getenv("AUTH_USERS_FILE")
 	if v := os.Getenv("AUTH_ALLOW_PLAINTEXT"); v != "" {
 		c.Auth.AllowPlaintext = parseBool(v)
+	} else {
+		c.Auth.AllowPlaintext = true
 	}
-	if v := os.Getenv("IRBIS_HOST"); v != "" {
-		c.Irbis.Host = v
-	}
+
+	c.Irbis.Host = os.Getenv("IRBIS_HOST")
 	if v := os.Getenv("IRBIS_PORT"); v != "" {
 		if p, err := strconv.Atoi(v); err == nil {
 			c.Irbis.Port = p
 		}
 	}
-	if v := os.Getenv("IRBIS_WORKSTATION"); v != "" {
-		c.Irbis.Workstation = v
-	}
-	if v := os.Getenv("IRBIS_DEFAULT_DATABASE"); v != "" {
-		c.Irbis.DefaultDatabase = v
-	}
+	c.Irbis.Workstation = os.Getenv("IRBIS_WORKSTATION")
+	c.Irbis.DefaultDatabase = os.Getenv("IRBIS_DEFAULT_DATABASE")
 	if v := os.Getenv("IRBIS_DIAL_TIMEOUT"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			c.Irbis.DialTimeout = d
@@ -118,15 +120,9 @@ func (c *Config) applyEnv() {
 	if v := os.Getenv("IRBIS_USE_REQUEST_CREDENTIALS"); v != "" {
 		c.Irbis.UseRequestCredentials = parseBool(v)
 	}
-	if v := os.Getenv("IRBIS_SERVICE_USERNAME"); v != "" {
-		c.Irbis.ServiceUsername = v
-	}
-	if v := os.Getenv("IRBIS_SERVICE_PASSWORD"); v != "" {
-		c.Irbis.ServicePassword = v
-	}
-	if v := os.Getenv("IRBIS_DATABASES_MENU"); v != "" {
-		c.Irbis.DatabasesMenu = v
-	}
+	c.Irbis.ServiceUsername = os.Getenv("IRBIS_SERVICE_USERNAME")
+	c.Irbis.ServicePassword = os.Getenv("IRBIS_SERVICE_PASSWORD")
+	c.Irbis.DatabasesMenu = os.Getenv("IRBIS_DATABASES_MENU")
 }
 
 func parseBool(v string) bool {

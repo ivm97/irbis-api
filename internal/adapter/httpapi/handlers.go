@@ -23,6 +23,38 @@ func (h *Handler) health(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
+type loginBody struct {
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	Workstation string `json:"workstation"`
+}
+
+func (h *Handler) login(c echo.Context) error {
+	var body loginBody
+	if err := c.Bind(&body); err != nil || body.Username == "" || body.Password == "" {
+		return writeErr(c, domain.ErrInvalidInput)
+	}
+	res, err := h.svc.Me(c.Request().Context(), body.Username, body.Password)
+	if err != nil {
+		return writeErr(c, err)
+	}
+	arm, err := domain.NormalizeWorkstation(body.Workstation, "")
+	if err != nil {
+		return writeErr(c, err)
+	}
+	ws := ""
+	if body.Workstation != "" {
+		ws = string(arm)
+	}
+	setAuthCookies(c, body.Username, body.Password, ws)
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handler) logout(c echo.Context) error {
+	clearAuthCookies(c)
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) me(c echo.Context) error {
 	user, pass := credentials(c)
 	res, err := h.svc.Me(c.Request().Context(), user, pass)

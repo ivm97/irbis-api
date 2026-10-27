@@ -19,6 +19,14 @@ func (h *Handler) GetHealth(ctx echo.Context) error {
 	return h.health(ctx)
 }
 
+func (h *Handler) Login(ctx echo.Context) error {
+	return h.login(ctx)
+}
+
+func (h *Handler) Logout(ctx echo.Context) error {
+	return h.logout(ctx)
+}
+
 func (h *Handler) GetMe(ctx echo.Context, _ apigen.GetMeParams) error {
 	return h.me(ctx)
 }
