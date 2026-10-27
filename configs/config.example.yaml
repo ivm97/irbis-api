@@ -1,0 +1,24 @@
+http:
+  addr: ":8080"
+
+auth:
+  users_file: configs/users.example.yaml
+  # Allow plaintext passwords from users file (convenient for local demo).
+  # Prefer password_hash (bcrypt) in production and set this to false.
+  allow_plaintext: true
+
+irbis:
+  host: "127.0.0.1"
+  port: 6666
+  # Default ARM (Cataloger). Override per request: X-Irbis-Workstation.
+  # Also overridable via IRBIS_WORKSTATION / .env
+  workstation: "C"
+  default_database: "IBIS"
+  databases_menu: "1..dbnam2.mnu"
+  dial_timeout: 10s
+  io_timeout: 0s
+  # If true, connect to IRBIS with X-API-User / X-API-Password from the request.
+  # If false, use service_username / service_password below.
+  use_request_credentials: true
+  service_username: "librarian"
+  service_password: "secret"

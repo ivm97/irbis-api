@@ -1,0 +1,660 @@
+openapi: 3.0.3
+info:
+  title: Irbis API
+  description: |
+    REST gateway for IRBIS64.
+
+    Auth headers: `X-API-User`, `X-API-Password`.
+    Optional ARM: `X-Irbis-Workstation` (`A|C|M|R|B|K`). Default is Cataloger (`C`)
+    from server config / `IRBIS_WORKSTATION`.
+
+    Record JSON uses `fields` array with numeric `tag` (MARC/IRBIS repeats-friendly).
+  version: 1.1.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local
+
+tags:
+  - name: health
+  - name: meta
+  - name: records
+  - name: search
+  - name: dictionary
+  - name: gbl
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Liveness probe
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /v1/me:
+    get:
+      tags: [meta]
+      summary: Current API user (databases and rights)
+      operationId: getMe
+      parameters:
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/config:
+    get:
+      tags: [meta]
+      summary: Server config for the client (ARMs, modes, IRBIS metadata)
+      operationId: getConfig
+      parameters:
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+      responses:
+        "200":
+          description: Config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerConfigResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/databases/{database}/records/search:
+    get:
+      tags: [search]
+      summary: Search records (query parameters)
+      operationId: searchRecords
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+        - name: expression
+          in: query
+          description: Raw IRBIS search expression
+          schema: { type: string }
+        - name: mode
+          in: query
+          schema:
+            $ref: "#/components/schemas/SearchMode"
+        - name: value
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 0, default: 100 }
+        - name: offset
+          in: query
+          description: Skip N hits (0-based). Mapped to IRBIS FirstRecord = offset+1.
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: format
+          in: query
+          schema: { type: string }
+        - name: with_records
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Search result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+    post:
+      tags: [search]
+      summary: Advanced search (JSON body)
+      operationId: searchRecordsAdvanced
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Search result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/databases/{database}/records/count:
+    get:
+      tags: [search]
+      summary: Count matching records
+      operationId: countRecords
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+        - name: expression
+          in: query
+          schema: { type: string }
+        - name: mode
+          in: query
+          schema:
+            $ref: "#/components/schemas/SearchMode"
+        - name: value
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CountResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/databases/{database}/records/{mfn}:
+    get:
+      tags: [records]
+      summary: Get one record
+      operationId: getRecord
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/Mfn"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+        - name: format
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: [records]
+      summary: Replace/update one record
+      operationId: putRecord
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/Mfn"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordWrite"
+      responses:
+        "200":
+          description: Saved record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+    delete:
+      tags: [records]
+      summary: Logically delete a record
+      operationId: deleteRecord
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/Mfn"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/databases/{database}/records:
+    post:
+      tags: [records]
+      summary: Create a new record
+      operationId: createRecord
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordWrite"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Record"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/databases/{database}/records/batch:
+    put:
+      tags: [records]
+      summary: Create/update multiple records
+      operationId: putRecordsBatch
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordBatchWrite"
+      responses:
+        "200":
+          description: Saved records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordBatchResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/databases/{database}/records/gbl:
+    post:
+      tags: [gbl]
+      summary: Run global correction (GBL) job
+      operationId: runGlobalCorrection
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GblRequest"
+      responses:
+        "200":
+          description: GBL result lines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GblResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /v1/databases/{database}/terms:
+    get:
+      tags: [dictionary]
+      summary: Browse dictionary terms
+      operationId: listTerms
+      parameters:
+        - $ref: "#/components/parameters/Database"
+        - $ref: "#/components/parameters/AuthUser"
+        - $ref: "#/components/parameters/AuthPassword"
+        - $ref: "#/components/parameters/Workstation"
+        - name: start
+          in: query
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, default: 50 }
+      responses:
+        "200":
+          description: Terms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TermsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+components:
+  securitySchemes:
+    ApiHeaders:
+      type: apiKey
+      in: header
+      name: X-API-User
+      description: Pair with header X-API-Password.
+
+  parameters:
+    Database:
+      name: database
+      in: path
+      required: true
+      schema: { type: string, example: IBIS }
+    Mfn:
+      name: mfn
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    AuthUser:
+      name: X-API-User
+      in: header
+      required: true
+      schema: { type: string }
+    AuthPassword:
+      name: X-API-Password
+      in: header
+      required: true
+      schema: { type: string, format: password }
+    Workstation:
+      name: X-Irbis-Workstation
+      in: header
+      required: false
+      description: ARM letter. Default Cataloger (C) from server config.
+      schema:
+        type: string
+        enum: [A, C, M, R, B, K]
+
+  responses:
+    Unauthorized:
+      description: Missing/invalid credentials
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Authenticated but no access
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Record not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, example: ok }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        code: { type: integer }
+
+    SearchMode:
+      type: string
+      enum: [expression, author, title, keyword, inventory, index, year, publisher, subject, language, all]
+
+    SubField:
+      type: object
+      required: [code, value]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 1, example: a }
+        value: { type: string }
+
+    Field:
+      type: object
+      required: [tag]
+      properties:
+        tag: { type: integer, example: 200 }
+        value: { type: string }
+        subfields:
+          type: array
+          items: { $ref: "#/components/schemas/SubField" }
+
+    Record:
+      type: object
+      required: [database, mfn, status, version, fields]
+      properties:
+        database: { type: string }
+        mfn: { type: integer }
+        status: { type: integer }
+        version: { type: integer }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/Field" }
+        formatted: { type: string }
+
+    RecordWrite:
+      type: object
+      required: [fields]
+      properties:
+        mfn: { type: integer }
+        status: { type: integer }
+        version: { type: integer }
+        fields:
+          type: array
+          items: { $ref: "#/components/schemas/Field" }
+
+    RecordBatchWrite:
+      type: object
+      required: [records]
+      properties:
+        records:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/RecordWrite" }
+
+    RecordBatchResponse:
+      type: object
+      required: [records]
+      properties:
+        records:
+          type: array
+          items: { $ref: "#/components/schemas/Record" }
+
+    SearchHit:
+      type: object
+      required: [mfn]
+      properties:
+        mfn: { type: integer }
+        description: { type: string }
+        record: { $ref: "#/components/schemas/Record" }
+
+    SearchRequest:
+      type: object
+      properties:
+        expression: { type: string }
+        mode: { $ref: "#/components/schemas/SearchMode" }
+        value: { type: string }
+        limit: { type: integer, minimum: 0, default: 100 }
+        offset: { type: integer, minimum: 0, default: 0 }
+        format: { type: string }
+        with_records: { type: boolean, default: false }
+        min_mfn: { type: integer, minimum: 0 }
+        max_mfn: { type: integer, minimum: 0 }
+        sequential: { type: string }
+
+    SearchResponse:
+      type: object
+      required: [expression, count, hits]
+      properties:
+        expression: { type: string }
+        count: { type: integer, description: Hits in this page }
+        total: { type: integer, description: Total matches on server }
+        hits:
+          type: array
+          items: { $ref: "#/components/schemas/SearchHit" }
+
+    CountResponse:
+      type: object
+      required: [expression, total]
+      properties:
+        expression: { type: string }
+        total: { type: integer }
+
+    TermInfo:
+      type: object
+      required: [text, count]
+      properties:
+        text: { type: string }
+        count: { type: integer }
+
+    TermsResponse:
+      type: object
+      required: [terms]
+      properties:
+        terms:
+          type: array
+          items: { $ref: "#/components/schemas/TermInfo" }
+
+    MeResponse:
+      type: object
+      required: [username, databases]
+      properties:
+        username: { type: string }
+        databases:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string, enum: [read, write] }
+
+    WorkstationInfo:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+
+    DatabaseInfo:
+      type: object
+      required: [name, read_only]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        read_only: { type: boolean }
+        max_mfn: { type: integer }
+
+    IrbisServerInfo:
+      type: object
+      properties:
+        version: { type: string }
+        organization: { type: string }
+        max_clients: { type: integer }
+        connected_clients: { type: integer }
+        databases:
+          type: array
+          items: { $ref: "#/components/schemas/DatabaseInfo" }
+
+    ServerConfigResponse:
+      type: object
+      required: [default_workstation, workstations, search_modes, irbis]
+      properties:
+        default_workstation: { type: string }
+        workstations:
+          type: array
+          items: { $ref: "#/components/schemas/WorkstationInfo" }
+        search_modes:
+          type: array
+          items: { type: string }
+        irbis: { $ref: "#/components/schemas/IrbisServerInfo" }
+
+    GblStatement:
+      type: object
+      required: [command]
+      properties:
+        command: { type: string, example: ADD }
+        parameter1: { type: string }
+        parameter2: { type: string }
+        format1: { type: string }
+        format2: { type: string }
+
+    GblRequest:
+      type: object
+      properties:
+        actualize: { type: boolean }
+        autoin: { type: boolean }
+        formal_control: { type: boolean }
+        filename: { type: string, description: Server-side .gbl file name (without @) }
+        search_expression: { type: string }
+        mode: { $ref: "#/components/schemas/SearchMode" }
+        value: { type: string }
+        first_record: { type: integer }
+        number_of_records: { type: integer }
+        min_mfn: { type: integer }
+        max_mfn: { type: integer }
+        mfn_list:
+          type: array
+          items: { type: integer }
+        statements:
+          type: array
+          items: { $ref: "#/components/schemas/GblStatement" }
+
+    GblResult:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          items: { type: string }
+
+security:
+  - ApiHeaders: []

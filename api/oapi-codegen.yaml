@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/v2.4.1/configuration-schema.json
+package: apigen
+generate:
+  echo-server: true
+  models: true
+  embedded-spec: false
+output: gen/server.gen.go
+output-options:
+  skip-prune: true
