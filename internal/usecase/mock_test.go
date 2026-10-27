@@ -76,6 +76,18 @@ func (m *mockCatalog) GetRecord(_ context.Context, sess ports.Session, database 
 	return r, nil
 }
 
+func (m *mockCatalog) GetRecords(ctx context.Context, sess ports.Session, database string, mfns []int) ([]domain.Record, error) {
+	out := make([]domain.Record, 0, len(mfns))
+	for _, mfn := range mfns {
+		r, err := m.GetRecord(ctx, sess, database, mfn, "")
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, nil
+}
+
 func (m *mockCatalog) SaveRecord(_ context.Context, sess ports.Session, database string, in domain.RecordWrite) (domain.Record, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

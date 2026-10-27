@@ -56,6 +56,16 @@ const (
 	GetConfigParamsXIrbisWorkstationR GetConfigParamsXIrbisWorkstation = "R"
 )
 
+// Defines values for PrintRecordsParamsXIrbisWorkstation.
+const (
+	PrintRecordsParamsXIrbisWorkstationA PrintRecordsParamsXIrbisWorkstation = "A"
+	PrintRecordsParamsXIrbisWorkstationB PrintRecordsParamsXIrbisWorkstation = "B"
+	PrintRecordsParamsXIrbisWorkstationC PrintRecordsParamsXIrbisWorkstation = "C"
+	PrintRecordsParamsXIrbisWorkstationK PrintRecordsParamsXIrbisWorkstation = "K"
+	PrintRecordsParamsXIrbisWorkstationM PrintRecordsParamsXIrbisWorkstation = "M"
+	PrintRecordsParamsXIrbisWorkstationR PrintRecordsParamsXIrbisWorkstation = "R"
+)
+
 // Defines values for CreateRecordParamsXIrbisWorkstation.
 const (
 	CreateRecordParamsXIrbisWorkstationA CreateRecordParamsXIrbisWorkstation = "A"
@@ -158,12 +168,12 @@ const (
 
 // Defines values for LoginJSONBodyWorkstation.
 const (
-	A LoginJSONBodyWorkstation = "A"
-	B LoginJSONBodyWorkstation = "B"
-	C LoginJSONBodyWorkstation = "C"
-	K LoginJSONBodyWorkstation = "K"
-	M LoginJSONBodyWorkstation = "M"
-	R LoginJSONBodyWorkstation = "R"
+	LoginJSONBodyWorkstationA LoginJSONBodyWorkstation = "A"
+	LoginJSONBodyWorkstationB LoginJSONBodyWorkstation = "B"
+	LoginJSONBodyWorkstationC LoginJSONBodyWorkstation = "C"
+	LoginJSONBodyWorkstationK LoginJSONBodyWorkstation = "K"
+	LoginJSONBodyWorkstationM LoginJSONBodyWorkstation = "M"
+	LoginJSONBodyWorkstationR LoginJSONBodyWorkstation = "R"
 )
 
 // CountResponse defines model for CountResponse.
@@ -248,6 +258,24 @@ type MeResponse struct {
 
 // MeResponseDatabases defines model for MeResponse.Databases.
 type MeResponseDatabases string
+
+// PrintRequest defines model for PrintRequest.
+type PrintRequest struct {
+	// Extras Optional document-level
+	Extras *map[string]string `json:"extras,omitempty"`
+
+	// Filename Suggested download basename without extension (Content-Disposition)
+	Filename *string `json:"filename,omitempty"`
+	Mfns     []int   `json:"mfns"`
+
+	// Template Template basename (e.g. shabl, dopshab)
+	Template string `json:"template"`
+}
+
+// PrintTemplatesResponse defines model for PrintTemplatesResponse.
+type PrintTemplatesResponse struct {
+	Templates []string `json:"templates"`
+}
 
 // Record defines model for Record.
 type Record struct {
@@ -384,6 +412,21 @@ type GetConfigParams struct {
 
 // GetConfigParamsXIrbisWorkstation defines parameters for GetConfig.
 type GetConfigParamsXIrbisWorkstation string
+
+// PrintRecordsParams defines parameters for PrintRecords.
+type PrintRecordsParams struct {
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
+
+	// XIrbisWorkstation ARM letter. Default Cataloger (C) from server config.
+	XIrbisWorkstation *PrintRecordsParamsXIrbisWorkstation `json:"X-Irbis-Workstation,omitempty"`
+}
+
+// PrintRecordsParamsXIrbisWorkstation defines parameters for PrintRecords.
+type PrintRecordsParamsXIrbisWorkstation string
 
 // CreateRecordParams defines parameters for CreateRecord.
 type CreateRecordParams struct {
@@ -574,6 +617,18 @@ type GetMeParams struct {
 	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
 }
 
+// ListPrintTemplatesParams defines parameters for ListPrintTemplates.
+type ListPrintTemplatesParams struct {
+	// XAPIUser Optional if auth cookies from /v1/login are present.
+	XAPIUser *AuthUser `json:"X-API-User,omitempty"`
+
+	// XAPIPassword Optional if auth cookies from /v1/login are present.
+	XAPIPassword *AuthPassword `json:"X-API-Password,omitempty"`
+}
+
+// PrintRecordsJSONRequestBody defines body for PrintRecords for application/json ContentType.
+type PrintRecordsJSONRequestBody = PrintRequest
+
 // CreateRecordJSONRequestBody defines body for CreateRecord for application/json ContentType.
 type CreateRecordJSONRequestBody = RecordWrite
 
@@ -600,6 +655,9 @@ type ServerInterface interface {
 	// Server config for the client (ARMs, modes, IRBIS metadata)
 	// (GET /v1/config)
 	GetConfig(ctx echo.Context, params GetConfigParams) error
+	// Fill a print template for selected MFNs and download RTF
+	// (POST /v1/databases/{database}/print)
+	PrintRecords(ctx echo.Context, database Database, params PrintRecordsParams) error
 	// Create a new record
 	// (POST /v1/databases/{database}/records)
 	CreateRecord(ctx echo.Context, database Database, params CreateRecordParams) error
@@ -639,6 +697,9 @@ type ServerInterface interface {
 	// Current API user (databases and rights)
 	// (GET /v1/me)
 	GetMe(ctx echo.Context, params GetMeParams) error
+	// List available print templates
+	// (GET /v1/print/templates)
+	ListPrintTemplates(ctx echo.Context, params ListPrintTemplatesParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -713,6 +774,74 @@ func (w *ServerInterfaceWrapper) GetConfig(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetConfig(ctx, params)
+	return err
+}
+
+// PrintRecords converts echo context to params.
+func (w *ServerInterfaceWrapper) PrintRecords(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "database" -------------
+	var database Database
+
+	err = runtime.BindStyledParameterWithOptions("simple", "database", ctx.Param("database"), &database, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter database: %s", err))
+	}
+
+	ctx.Set(ApiHeadersScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PrintRecordsParams
+
+	headers := ctx.Request().Header
+	// ------------- Optional header parameter "X-API-User" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
+		var XAPIUser AuthUser
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
+		}
+
+		params.XAPIUser = &XAPIUser
+	}
+	// ------------- Optional header parameter "X-API-Password" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
+		var XAPIPassword AuthPassword
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
+		}
+
+		params.XAPIPassword = &XAPIPassword
+	}
+	// ------------- Optional header parameter "X-Irbis-Workstation" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Irbis-Workstation")]; found {
+		var XIrbisWorkstation PrintRecordsParamsXIrbisWorkstation
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-Irbis-Workstation, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Irbis-Workstation", valueList[0], &XIrbisWorkstation, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-Irbis-Workstation: %s", err))
+		}
+
+		params.XIrbisWorkstation = &XIrbisWorkstation
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PrintRecords(ctx, database, params)
 	return err
 }
 
@@ -1571,6 +1700,52 @@ func (w *ServerInterfaceWrapper) GetMe(ctx echo.Context) error {
 	return err
 }
 
+// ListPrintTemplates converts echo context to params.
+func (w *ServerInterfaceWrapper) ListPrintTemplates(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(ApiHeadersScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPrintTemplatesParams
+
+	headers := ctx.Request().Header
+	// ------------- Optional header parameter "X-API-User" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-API-User")]; found {
+		var XAPIUser AuthUser
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-User, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-User", valueList[0], &XAPIUser, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-User: %s", err))
+		}
+
+		params.XAPIUser = &XAPIUser
+	}
+	// ------------- Optional header parameter "X-API-Password" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-API-Password")]; found {
+		var XAPIPassword AuthPassword
+		n := len(valueList)
+		if n != 1 {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Expected one value for X-API-Password, got %d", n))
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-API-Password", valueList[0], &XAPIPassword, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter X-API-Password: %s", err))
+		}
+
+		params.XAPIPassword = &XAPIPassword
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListPrintTemplates(ctx, params)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -1601,6 +1776,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/health", wrapper.GetHealth)
 	router.GET(baseURL+"/v1/config", wrapper.GetConfig)
+	router.POST(baseURL+"/v1/databases/:database/print", wrapper.PrintRecords)
 	router.POST(baseURL+"/v1/databases/:database/records", wrapper.CreateRecord)
 	router.PUT(baseURL+"/v1/databases/:database/records/batch", wrapper.PutRecordsBatch)
 	router.GET(baseURL+"/v1/databases/:database/records/count", wrapper.CountRecords)
@@ -1614,5 +1790,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.POST(baseURL+"/v1/login", wrapper.Login)
 	router.POST(baseURL+"/v1/logout", wrapper.Logout)
 	router.GET(baseURL+"/v1/me", wrapper.GetMe)
+	router.GET(baseURL+"/v1/print/templates", wrapper.ListPrintTemplates)
 
 }

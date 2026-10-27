@@ -12,9 +12,10 @@ import (
 )
 
 type Config struct {
-	HTTP  HTTPConfig
-	Auth  AuthConfig
-	Irbis IrbisConfig
+	HTTP     HTTPConfig
+	Auth     AuthConfig
+	Irbis    IrbisConfig
+	PrintDir string // TEMPLATES_DIR; default ./templates
 }
 
 type HTTPConfig struct {
@@ -82,6 +83,9 @@ func (c *Config) applyDefaults() {
 	if c.Irbis.DatabasesMenu == "" {
 		c.Irbis.DatabasesMenu = "1..dbnam2.mnu"
 	}
+	if c.PrintDir == "" {
+		c.PrintDir = "templates"
+	}
 	// Default: request credentials go to IRBIS unless explicitly disabled.
 	if os.Getenv("IRBIS_USE_REQUEST_CREDENTIALS") == "" {
 		c.Irbis.UseRequestCredentials = true
@@ -99,10 +103,11 @@ func (c *Config) applyEnv() {
 		c.Auth.AllowPlaintext = true
 	}
 
-	c.Irbis.Host = os.Getenv("IRBIS_HOST")
-	if v := os.Getenv("IRBIS_PORT"); v != "" {
-		if p, err := strconv.Atoi(v); err == nil {
-			c.Irbis.Port = p
+	if addr := strings.TrimSpace(os.Getenv("IRBIS_ADDR")); addr != "" {
+		host, port, err := parseHostPort(addr)
+		if err == nil {
+			c.Irbis.Host = host
+			c.Irbis.Port = port
 		}
 	}
 	c.Irbis.Workstation = os.Getenv("IRBIS_WORKSTATION")
@@ -123,6 +128,7 @@ func (c *Config) applyEnv() {
 	c.Irbis.ServiceUsername = os.Getenv("IRBIS_SERVICE_USERNAME")
 	c.Irbis.ServicePassword = os.Getenv("IRBIS_SERVICE_PASSWORD")
 	c.Irbis.DatabasesMenu = os.Getenv("IRBIS_DATABASES_MENU")
+	c.PrintDir = os.Getenv("TEMPLATES_DIR")
 }
 
 func parseBool(v string) bool {
@@ -132,6 +138,40 @@ func parseBool(v string) bool {
 	default:
 		return false
 	}
+}
+
+// parseHostPort accepts "host:port" (also "[::1]:6666").
+func parseHostPort(addr string) (host string, port int, err error) {
+	addr = strings.TrimSpace(addr)
+	// Allow host without port — defaults applied later.
+	if !strings.Contains(addr, ":") {
+		return addr, 0, nil
+	}
+	h, p, err := splitHostPort(addr)
+	if err != nil {
+		return "", 0, err
+	}
+	port, err = strconv.Atoi(p)
+	if err != nil || port <= 0 || port > 65535 {
+		return "", 0, fmt.Errorf("invalid port in IRBIS_ADDR %q", addr)
+	}
+	return h, port, nil
+}
+
+func splitHostPort(addr string) (host, port string, err error) {
+	// Bracketed IPv6: [::1]:6666
+	if strings.HasPrefix(addr, "[") {
+		end := strings.IndexByte(addr, ']')
+		if end < 0 || end+1 >= len(addr) || addr[end+1] != ':' {
+			return "", "", fmt.Errorf("invalid IRBIS_ADDR %q", addr)
+		}
+		return addr[1:end], addr[end+2:], nil
+	}
+	i := strings.LastIndexByte(addr, ':')
+	if i <= 0 || i == len(addr)-1 {
+		return "", "", fmt.Errorf("invalid IRBIS_ADDR %q", addr)
+	}
+	return addr[:i], addr[i+1:], nil
 }
 
 // loadDotEnv loads KEY=VALUE lines into the process env if the file exists.

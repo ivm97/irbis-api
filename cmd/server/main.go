@@ -49,7 +49,7 @@ func main() {
 		log.Fatalf("workstation: %v", err)
 	}
 
-	svc := usecase.NewCatalogService(auth, gw, irbisSess, defaultARM)
+	svc := usecase.NewCatalogServiceWithTemplates(auth, gw, irbisSess, defaultARM, cfg.PrintDir)
 
 	e := echo.New()
 	e.HideBanner = true

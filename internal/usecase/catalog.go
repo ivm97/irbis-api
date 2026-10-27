@@ -3,10 +3,12 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/ivm97/irbis-api/internal/domain"
 	"github.com/ivm97/irbis-api/internal/ports"
+	"github.com/ivm97/irbis-api/internal/printtpl"
 )
 
 // CatalogService orchestrates authz + catalog operations.
@@ -15,9 +17,14 @@ type CatalogService struct {
 	catalog            ports.Catalog
 	irbis              ports.Session // service account when UseRequestCredentials=false; Username empty = use API user
 	defaultWorkstation domain.Workstation
+	templates          *printtpl.Store
 }
 
 func NewCatalogService(auth ports.AuthStore, catalog ports.Catalog, irbis ports.Session, defaultWorkstation domain.Workstation) *CatalogService {
+	return NewCatalogServiceWithTemplates(auth, catalog, irbis, defaultWorkstation, "templates")
+}
+
+func NewCatalogServiceWithTemplates(auth ports.AuthStore, catalog ports.Catalog, irbis ports.Session, defaultWorkstation domain.Workstation, templatesDir string) *CatalogService {
 	if defaultWorkstation == "" {
 		defaultWorkstation = domain.ARMCataloger
 	}
@@ -26,6 +33,7 @@ func NewCatalogService(auth ports.AuthStore, catalog ports.Catalog, irbis ports.
 		catalog:            catalog,
 		irbis:              irbis,
 		defaultWorkstation: defaultWorkstation,
+		templates:          printtpl.NewStore(templatesDir),
 	}
 }
 
@@ -325,4 +333,81 @@ func (s *CatalogService) GlobalCorrection(ctx context.Context, apiUser, apiPass,
 	}
 
 	return s.catalog.GlobalCorrection(ctx, sess, database, req)
+}
+
+// PrintRequest selects records and a template for RTF fill.
+type PrintRequest struct {
+	Template string
+	MFNs     []int
+	Extras   map[string]string
+}
+
+// PrintResult is a filled document ready for download.
+type PrintResult struct {
+	Filename    string
+	ContentType string
+	Body        []byte
+}
+
+func (s *CatalogService) ListPrintTemplates() ([]string, error) {
+	if s.templates == nil {
+		return nil, fmt.Errorf("%w: templates not configured", domain.ErrInvalidInput)
+	}
+	return s.templates.List()
+}
+
+func (s *CatalogService) Print(ctx context.Context, apiUser, apiPass, workstation, database string, req PrintRequest) (PrintResult, error) {
+	user, sess, err := s.authenticate(ctx, apiUser, apiPass, workstation)
+	if err != nil {
+		return PrintResult{}, err
+	}
+	if err := s.require(user, database, domain.AccessRead); err != nil {
+		return PrintResult{}, err
+	}
+	tpl := strings.TrimSpace(req.Template)
+	if tpl == "" {
+		return PrintResult{}, fmt.Errorf("%w: template required", domain.ErrInvalidInput)
+	}
+	if len(req.MFNs) == 0 {
+		return PrintResult{}, fmt.Errorf("%w: mfns required", domain.ErrInvalidInput)
+	}
+	if len(req.MFNs) > 500 {
+		return PrintResult{}, fmt.Errorf("%w: max 500 mfns per print", domain.ErrInvalidInput)
+	}
+	for _, m := range req.MFNs {
+		if m <= 0 {
+			return PrintResult{}, fmt.Errorf("%w: mfn must be positive", domain.ErrInvalidInput)
+		}
+	}
+
+	recs, err := s.catalog.GetRecords(ctx, sess, database, req.MFNs)
+	if err != nil {
+		return PrintResult{}, err
+	}
+	if len(recs) == 0 {
+		return PrintResult{}, domain.ErrNotFound
+	}
+
+	extras := printtpl.DocExtras(req.Extras)
+	var rows []map[string]string
+	if s.templates.HasRepeating(tpl) {
+		for _, rec := range recs {
+			rows = append(rows, printtpl.InventoryRows(rec)...)
+		}
+	} else {
+		for _, rec := range recs {
+			rows = append(rows, printtpl.CardKeys(rec))
+		}
+	}
+
+	body, ext, err := s.templates.Render(tpl, rows, extras)
+	if err != nil {
+		return PrintResult{}, fmt.Errorf("%w: %v", domain.ErrInvalidInput, err)
+	}
+	filename := printtpl.DefaultFilename(strings.TrimSuffix(filepath.Base(tpl), filepath.Ext(tpl)), len(recs)) + ext
+	ct := "application/rtf"
+	if strings.EqualFold(ext, ".txt") {
+		ct = "text/plain; charset=windows-1251"
+	}
+	return PrintResult{Filename: filename, ContentType: ct, Body: body}, nil
 }

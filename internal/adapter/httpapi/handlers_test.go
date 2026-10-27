@@ -58,6 +58,17 @@ func (f *fakeCatalog) GetRecord(_ context.Context, sess ports.Session, database 
 	f.lastWS = sess.Workstation
 	return domain.Record{Database: database, MFN: mfn, Fields: []domain.Field{{Tag: 200, Subfields: []domain.SubField{{Code: "a", Value: "T"}}}}}, nil
 }
+func (f *fakeCatalog) GetRecords(ctx context.Context, sess ports.Session, database string, mfns []int) ([]domain.Record, error) {
+	out := make([]domain.Record, 0, len(mfns))
+	for _, mfn := range mfns {
+		r, err := f.GetRecord(ctx, sess, database, mfn, "")
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, nil
+}
 func (f *fakeCatalog) SaveRecord(_ context.Context, sess ports.Session, database string, in domain.RecordWrite) (domain.Record, error) {
 	f.lastWS = sess.Workstation
 	mfn := in.MFN

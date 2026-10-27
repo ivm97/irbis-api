@@ -23,6 +23,7 @@ type Catalog interface {
 	Search(ctx context.Context, sess Session, database string, q domain.SearchQuery) (domain.SearchResult, error)
 	Count(ctx context.Context, sess Session, database string, q domain.SearchQuery) (expression string, total int, err error)
 	GetRecord(ctx context.Context, sess Session, database string, mfn int, format string) (domain.Record, error)
+	GetRecords(ctx context.Context, sess Session, database string, mfns []int) ([]domain.Record, error)
 	SaveRecord(ctx context.Context, sess Session, database string, in domain.RecordWrite) (domain.Record, error)
 	SaveRecords(ctx context.Context, sess Session, database string, in []domain.RecordWrite) ([]domain.Record, error)
 	DeleteRecord(ctx context.Context, sess Session, database string, mfn int) error

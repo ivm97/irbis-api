@@ -229,6 +229,25 @@ func (g *Gateway) GetRecord(ctx context.Context, sess ports.Session, database st
 	return out, nil
 }
 
+func (g *Gateway) GetRecords(ctx context.Context, sess ports.Session, database string, mfns []int) ([]domain.Record, error) {
+	if len(mfns) == 0 {
+		return nil, nil
+	}
+	c := g.client(sess, database)
+	raw, err := c.ReadRecords(ctx, mfns)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	out := make([]domain.Record, 0, len(raw))
+	for i := range raw {
+		if raw[i].Mfn == 0 {
+			continue
+		}
+		out = append(out, toDomain(database, &raw[i]))
+	}
+	return out, nil
+}
+
 func (g *Gateway) SaveRecord(ctx context.Context, sess ports.Session, database string, in domain.RecordWrite) (domain.Record, error) {
 	c := g.client(sess, database)
 	rec := fromWrite(database, in)

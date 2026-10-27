@@ -74,3 +74,11 @@ func (h *Handler) RunGlobalCorrection(ctx echo.Context, _ apigen.Database, _ api
 func (h *Handler) ListTerms(ctx echo.Context, _ apigen.Database, _ apigen.ListTermsParams) error {
 	return h.listTerms(ctx)
 }
+
+func (h *Handler) ListPrintTemplates(ctx echo.Context, _ apigen.ListPrintTemplatesParams) error {
+	return h.listPrintTemplates(ctx)
+}
+
+func (h *Handler) PrintRecords(ctx echo.Context, _ apigen.Database, _ apigen.PrintRecordsParams) error {
+	return h.printRecords(ctx)
+}

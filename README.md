@@ -11,7 +11,7 @@ REST-шлюз к серверу **IRBIS64** на Go (Echo).
 
 ```bash
 cp .env.example .env
-# поправьте IRBIS_HOST / AUTH_USERS
+# поправьте IRBIS_ADDR / AUTH_USERS
 
 go run ./cmd/server
 ```
@@ -28,8 +28,7 @@ curl -s http://localhost:8080/swagger
 
 ```env
 HTTP_ADDR=:8080
-IRBIS_HOST=127.0.0.1
-IRBIS_PORT=6666
+IRBIS_ADDR=127.0.0.1:6666
 IRBIS_WORKSTATION=C
 IRBIS_USE_REQUEST_CREDENTIALS=true
 
@@ -91,8 +90,12 @@ await fetch('http://localhost:8080/v1/login', {
 | PUT | `/v1/databases/{db}/records/batch` | write |
 | POST | `/v1/databases/{db}/records/gbl` | write |
 | GET | `/v1/databases/{db}/terms` | read |
+| GET | `/v1/print/templates` | auth |
+| POST | `/v1/databases/{db}/print` | read |
 
 Запись — массив `fields` с числовым `tag` (удобно для повторов MARC/IRBIS).
+
+Печать: шаблоны RTF из `TEMPLATES_DIR` (по умолчанию `templates/`), плейсхолдеры `#key#`; в `dopshab` блок `#D2#`…`#2D#` размножается по экземплярам (910).
 
 ## OpenAPI
 

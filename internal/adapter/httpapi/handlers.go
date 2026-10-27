@@ -259,3 +259,86 @@ func (h *Handler) listTerms(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, map[string]any{"terms": terms})
 }
+
+func (h *Handler) listPrintTemplates(c echo.Context) error {
+	user, pass := credentials(c)
+	if _, err := h.svc.Me(c.Request().Context(), user, pass); err != nil {
+		return writeErr(c, err)
+	}
+	names, err := h.svc.ListPrintTemplates()
+	if err != nil {
+		return writeErr(c, err)
+	}
+	return c.JSON(http.StatusOK, map[string]any{"templates": names})
+}
+
+type printBody struct {
+	Template string            `json:"template"`
+	MFNs     []int             `json:"mfns"`
+	Extras   map[string]string `json:"extras"`
+	Filename string            `json:"filename"`
+}
+
+func (h *Handler) printRecords(c echo.Context) error {
+	user, pass := credentials(c)
+	db := c.Param("database")
+	var body printBody
+	if err := c.Bind(&body); err != nil {
+		return writeErr(c, domain.ErrInvalidInput)
+	}
+	res, err := h.svc.Print(c.Request().Context(), user, pass, workstation(c), db, usecase.PrintRequest{
+		Template: body.Template,
+		MFNs:     body.MFNs,
+		Extras:   body.Extras,
+	})
+	if err != nil {
+		return writeErr(c, err)
+	}
+	name := body.Filename
+	if name == "" {
+		name = res.Filename
+	} else if !hasExt(name) {
+		// Keep generated extension (.rtf).
+		ext := ""
+		if i := len(res.Filename) - 1; i >= 0 {
+			for j := len(res.Filename) - 1; j >= 0; j-- {
+				if res.Filename[j] == '.' {
+					ext = res.Filename[j:]
+					break
+				}
+			}
+		}
+		name = name + ext
+	}
+	c.Response().Header().Set(echo.HeaderContentDisposition, `attachment; filename="`+sanitizeFilename(name)+`"`)
+	return c.Blob(http.StatusOK, res.ContentType, res.Body)
+}
+
+func hasExt(name string) bool {
+	for i := len(name) - 1; i >= 0; i-- {
+		if name[i] == '.' {
+			return i < len(name)-1
+		}
+		if name[i] == '/' || name[i] == '\\' {
+			return false
+		}
+	}
+	return false
+}
+
+func sanitizeFilename(name string) string {
+	out := make([]rune, 0, len(name))
+	for _, r := range name {
+		switch r {
+		case '/', '\\', ':', '*', '?', '"', '<', '>', '|', '\n', '\r', '\t':
+			out = append(out, '_')
+		default:
+			out = append(out, r)
+		}
+	}
+	s := string(out)
+	if s == "" {
+		return "document.rtf"
+	}
+	return s
+}
