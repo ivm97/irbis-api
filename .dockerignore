@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+users.txt
+bin/
+*.exe
+**/*_test.go
+.dockerignore
+docker-compose*.yml
+README.md
