@@ -3,7 +3,7 @@ module github.com/ivm97/irbis-api
 go 1.22
 
 require (
-	github.com/ivm97/GoIrbis v0.0.0
+	github.com/ivm97/GoIrbis v0.0.0-20261027131036-6e1dd16549b8
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/oapi-codegen/runtime v1.1.1
 	golang.org/x/crypto v0.31.0
@@ -23,5 +23,3 @@ require (
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 )
-
-replace github.com/ivm97/GoIrbis => ../GoIrbis
