@@ -9,6 +9,9 @@ import (
 // AuthStore validates API credentials and returns the user principal.
 type AuthStore interface {
 	Authenticate(ctx context.Context, username, password string) (domain.User, error)
+	// AccessFor returns database ACL for username at ARM (lazy; may hit IRBIS).
+	// Local AUTH_USERS file ignores ARM and may set Unrestricted.
+	AccessFor(ctx context.Context, username string, arm domain.Workstation) (domain.DBAccess, error)
 }
 
 // Session carries IRBIS TCP credentials and ARM for one request.

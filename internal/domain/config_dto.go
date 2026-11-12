@@ -2,8 +2,9 @@ package domain
 
 // MeResponse is the authenticated API user profile.
 type MeResponse struct {
-	Username  string                    `json:"username"`
-	Databases map[string][]AccessLevel  `json:"databases"`
+	Username     string                   `json:"username"`
+	Unrestricted bool                     `json:"unrestricted,omitempty"`
+	Databases    map[string][]AccessLevel `json:"databases"`
 }
 
 // ServerConfigResponse is non-secret server settings for the client.

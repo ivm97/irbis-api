@@ -22,6 +22,23 @@ func (a memoryAuth) Authenticate(_ context.Context, username, password string) (
 	return out, nil
 }
 
+func (a memoryAuth) AccessFor(_ context.Context, username string, _ domain.Workstation) (domain.DBAccess, error) {
+	u, ok := a.users[username]
+	if !ok {
+		return domain.DBAccess{}, domain.ErrUnauthorized
+	}
+	if u.Unrestricted {
+		return domain.DBAccess{Unrestricted: true}, nil
+	}
+	out := make(map[string][]domain.AccessLevel, len(u.Databases))
+	for db, levels := range u.Databases {
+		cp := make([]domain.AccessLevel, len(levels))
+		copy(cp, levels)
+		out[db] = cp
+	}
+	return domain.DBAccess{Databases: out}, nil
+}
+
 type mockCatalog struct {
 	mu sync.Mutex
 

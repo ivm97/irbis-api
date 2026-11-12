@@ -8,15 +8,26 @@ const (
 	AccessWrite AccessLevel = "write"
 )
 
-// User is an API principal loaded from the local users file.
+// User is an API principal (local AUTH_USERS or IRBIS client_m + db_*.mnu).
 type User struct {
 	Username  string
-	Password  string // plaintext (only when allow_plaintext)
+	Password  string // plaintext (only when allow_plaintext / local store)
 	PassHash  string // bcrypt hash
-	Databases map[string][]AccessLevel
+	// Unrestricted: local AUTH_USERS file with empty/* ACL — any DB, any level; ARM ignored.
+	Unrestricted bool
+	Databases    map[string][]AccessLevel
+}
+
+// DBAccess is the ACL resolved for a user at a given ARM.
+type DBAccess struct {
+	Unrestricted bool
+	Databases    map[string][]AccessLevel
 }
 
 func (u User) Can(database string, need AccessLevel) bool {
+	if u.Unrestricted {
+		return true
+	}
 	levels, ok := u.Databases[database]
 	if !ok {
 		// case-insensitive DB name match

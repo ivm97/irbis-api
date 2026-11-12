@@ -41,6 +41,11 @@ type IrbisConfig struct {
 	ServiceUsername       string
 	ServicePassword       string
 	DatabasesMenu         string
+	// ACL: admin reads client_m / user ini / db_*.mnu (path codes in IRBIS file specs).
+	IniPathCode           string        // default "0" (IRBIS root) → 0..IRBISC_USER.INI
+	MenuPathCode          string        // default "1" (DATAI) → 1..db_user.mnu
+	UserDBMenuPattern     string        // optional, e.g. db_{user}.mnu when DBNNAMECAT empty
+	ACLCacheTTL           time.Duration // users list + per-(user,ARM) menu cache
 }
 
 // Load reads optional .env (ENV_FILE or .env), then builds config from process env.
@@ -58,8 +63,10 @@ func Load() (Config, error) {
 	if _, err := domain.NormalizeWorkstation(cfg.Irbis.Workstation, domain.ARMCataloger); err != nil {
 		return Config{}, fmt.Errorf("IRBIS_WORKSTATION: %w", err)
 	}
-	if cfg.Auth.Users == "" && cfg.Auth.UsersFile == "" {
-		return Config{}, fmt.Errorf("set AUTH_USERS or AUTH_USERS_FILE")
+	hasLocalUsers := cfg.Auth.Users != "" || cfg.Auth.UsersFile != ""
+	hasService := cfg.Irbis.ServiceUsername != "" && cfg.Irbis.ServicePassword != ""
+	if !hasLocalUsers && !hasService {
+		return Config{}, fmt.Errorf("set IRBIS_SERVICE_USERNAME/PASSWORD (or AUTH_USERS for local fallback)")
 	}
 	return cfg, nil
 }
@@ -82,6 +89,15 @@ func (c *Config) applyDefaults() {
 	}
 	if c.Irbis.DatabasesMenu == "" {
 		c.Irbis.DatabasesMenu = "1..dbnam2.mnu"
+	}
+	if c.Irbis.IniPathCode == "" {
+		c.Irbis.IniPathCode = "0"
+	}
+	if c.Irbis.MenuPathCode == "" {
+		c.Irbis.MenuPathCode = "1"
+	}
+	if c.Irbis.ACLCacheTTL == 0 {
+		c.Irbis.ACLCacheTTL = 5 * time.Minute
 	}
 	if c.PrintDir == "" {
 		c.PrintDir = "templates"
@@ -128,6 +144,14 @@ func (c *Config) applyEnv() {
 	c.Irbis.ServiceUsername = os.Getenv("IRBIS_SERVICE_USERNAME")
 	c.Irbis.ServicePassword = os.Getenv("IRBIS_SERVICE_PASSWORD")
 	c.Irbis.DatabasesMenu = os.Getenv("IRBIS_DATABASES_MENU")
+	c.Irbis.IniPathCode = os.Getenv("IRBIS_INI_PATH")
+	c.Irbis.MenuPathCode = os.Getenv("IRBIS_MENU_PATH")
+	c.Irbis.UserDBMenuPattern = os.Getenv("IRBIS_USER_DB_MENU_PATTERN")
+	if v := os.Getenv("IRBIS_ACL_CACHE_TTL"); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			c.Irbis.ACLCacheTTL = d
+		}
+	}
 	c.PrintDir = os.Getenv("TEMPLATES_DIR")
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/ivm97/irbis-api/internal/adapter/authfile"
+	"github.com/ivm97/irbis-api/internal/adapter/authboot"
 	"github.com/ivm97/irbis-api/internal/adapter/httpapi"
 	"github.com/ivm97/irbis-api/internal/adapter/irbisgw"
 	"github.com/ivm97/irbis-api/internal/config"
@@ -23,11 +23,6 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
-	auth, err := authfile.New(cfg.Auth.Users, cfg.Auth.UsersFile, cfg.Auth.AllowPlaintext)
-	if err != nil {
-		log.Fatalf("users: %v", err)
-	}
-
 	gw := irbisgw.New(irbisgw.Options{
 		Host:          cfg.Irbis.Host,
 		Port:          cfg.Irbis.Port,
@@ -35,6 +30,11 @@ func main() {
 		DialTimeout:   cfg.Irbis.DialTimeout,
 		IOTimeout:     cfg.Irbis.IOTimeout,
 	})
+
+	auth, err := authboot.NewStore(cfg, gw)
+	if err != nil {
+		log.Fatalf("auth: %v", err)
+	}
 
 	var irbisSess ports.Session
 	if !cfg.Irbis.UseRequestCredentials {

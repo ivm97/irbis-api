@@ -21,18 +21,15 @@ services:
       IRBIS_WORKSTATION: "${IRBIS_WORKSTATION:-C}"
       IRBIS_DEFAULT_DATABASE: "${IRBIS_DEFAULT_DATABASE:-IBIS}"
       IRBIS_USE_REQUEST_CREDENTIALS: "${IRBIS_USE_REQUEST_CREDENTIALS:-true}"
-      AUTH_ALLOW_PLAINTEXT: "${AUTH_ALLOW_PLAINTEXT:-true}"
-      # переопределите в .env; без AUTH_USERS / AUTH_USERS_FILE процесс не стартует
-      AUTH_USERS: "${AUTH_USERS:-librarian|secret|IBIS=read,write&RDR=read||reader|reader|IBIS=read}"
+      IRBIS_SERVICE_USERNAME: "${IRBIS_SERVICE_USERNAME:-admin}"
+      IRBIS_SERVICE_PASSWORD: "${IRBIS_SERVICE_PASSWORD:-}"
+      IRBIS_DATABASES_MENU: "${IRBIS_DATABASES_MENU:-1..dbnam2.mnu}"
+      IRBIS_ACL_CACHE_TTL: "${IRBIS_ACL_CACHE_TTL:-5m}"
       CORS_ALLOW_ORIGIN: "${CORS_ALLOW_ORIGIN:-}"
       TEMPLATES_DIR: /app/templates
     volumes:
       # шаблоны печати (опционально — в образе уже есть ./templates)
       - ./templates:/app/templates:ro
-      # раскомментируйте, если пользователи в файле:
-      # - ./users.txt:/app/users.txt:ro
-    # environment:
-    #   AUTH_USERS_FILE: /app/users.txt
     extra_hosts:
       # host.docker.internal → хост-машина (нужно на Linux)
       - "host.docker.internal:host-gateway"

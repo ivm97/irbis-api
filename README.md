@@ -11,7 +11,7 @@ REST-шлюз к серверу **IRBIS64** на Go (Echo).
 
 ```bash
 cp .env.example .env
-# поправьте IRBIS_ADDR / AUTH_USERS
+# поправьте IRBIS_ADDR и IRBIS_SERVICE_USERNAME/PASSWORD
 
 go run ./cmd/server
 ```
@@ -31,28 +31,23 @@ HTTP_ADDR=:8080
 IRBIS_ADDR=127.0.0.1:6666
 IRBIS_WORKSTATION=C
 IRBIS_USE_REQUEST_CREDENTIALS=true
-
-AUTH_ALLOW_PLAINTEXT=true
-AUTH_USERS=librarian|secret|IBIS=read,write&RDR=read||reader|reader|IBIS=read
+IRBIS_SERVICE_USERNAME=admin
+IRBIS_SERVICE_PASSWORD=secret
 ```
 
-### Пользователи
+### Пользователи и права (IRBIS ACL)
 
-Формат: `name|password_or_bcrypt|DB=perms&DB2=perms`, пользователи через `||`.
+По умолчанию API читает пользователей с сервера (`client_m` через admin-учётку из env):
 
-| Поле | Пример |
-|------|--------|
-| password | `secret` (если `AUTH_ALLOW_PLAINTEXT=true`) |
-| bcrypt | `$2a$10$...` (префикс `$2`) |
-| права | `IBIS=read,write` |
+1. пароль — из списка пользователей IRBIS;
+2. на первом запросе с данным АРМ — ini `IRBIS{ARM}_{user}.INI` (корень, path `0`) → `DBNNAMECAT`;
+3. меню баз `db_….mnu` из DATAI (path `1`); `-ИМЯ` = только чтение; нет меню → `IRBIS_DATABASES_MENU` (`dbnam2.mnu`);
+4. кэш `(user, ARM)` на `IRBIS_ACL_CACHE_TTL` (по умолчанию 5m).
 
-Или файл построчно (`AUTH_USERS_FILE=users.txt`):
+Опциональный локальный fallback: `AUTH_USERS` / `AUTH_USERS_FILE` (если заданы — **только файл**, без ограничений IRBIS по АРМ/mnu).
 
-```
-librarian|secret|IBIS=read,write&RDR=read
-reader|reader|IBIS=read
-```
-
+Формат: `name|password_or_bcrypt|DB=perms&DB2=perms`, через `||` (или построчно в файле).  
+Пустой ACL / `*` / два поля `name|pass` → `unrestricted` (любая БД, любой АРМ).  
 Хеш: `go run ./cmd/hashpwd 'my-password'`.
 
 ### Авторизация с фронта

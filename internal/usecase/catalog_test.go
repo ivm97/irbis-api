@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ivm97/irbis-api/internal/domain"
+	"github.com/ivm97/irbis-api/internal/ports"
 )
 
 func TestBuildExpression_Modes(t *testing.T) {
@@ -106,12 +107,27 @@ func TestSearch_ForbiddenAndUnauthorized(t *testing.T) {
 
 func TestMe(t *testing.T) {
 	svc := testService(&mockCatalog{})
-	me, err := svc.Me(context.Background(), "librarian", "secret")
+	me, err := svc.Me(context.Background(), "librarian", "secret", "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if me.Username != "librarian" || len(me.Databases["IBIS"]) != 2 {
 		t.Fatalf("%+v", me)
+	}
+}
+
+func TestUnrestrictedLocalUser(t *testing.T) {
+	auth := memoryAuth{users: map[string]domain.User{
+		"boss": {Username: "boss", Password: "x", Unrestricted: true},
+	}}
+	svc := NewCatalogService(auth, &mockCatalog{searchRes: domain.SearchResult{}}, ports.Session{}, domain.ARMCataloger)
+	me, err := svc.Me(context.Background(), "boss", "x", "A")
+	if err != nil || !me.Unrestricted {
+		t.Fatalf("%v %+v", err, me)
+	}
+	_, err = svc.Search(context.Background(), "boss", "x", "R", "WHATEVER", domain.SearchQuery{Mode: domain.ModeAll})
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

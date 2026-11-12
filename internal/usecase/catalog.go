@@ -50,6 +50,12 @@ func (s *CatalogService) authenticate(ctx context.Context, username, password st
 	if err != nil {
 		return domain.User{}, ports.Session{}, err
 	}
+	access, err := s.auth.AccessFor(ctx, username, arm)
+	if err != nil {
+		return domain.User{}, ports.Session{}, err
+	}
+	user.Unrestricted = access.Unrestricted
+	user.Databases = access.Databases
 	sess := ports.Session{
 		Username:    username,
 		Password:    password,
@@ -121,8 +127,8 @@ func wrapPrefix(prefix, value string) string {
 	return prefix + v + "$"
 }
 
-func (s *CatalogService) Me(ctx context.Context, apiUser, apiPass string) (domain.MeResponse, error) {
-	user, err := s.auth.Authenticate(ctx, apiUser, apiPass)
+func (s *CatalogService) Me(ctx context.Context, apiUser, apiPass, workstation string) (domain.MeResponse, error) {
+	user, _, err := s.authenticate(ctx, apiUser, apiPass, workstation)
 	if err != nil {
 		return domain.MeResponse{}, err
 	}
@@ -132,7 +138,11 @@ func (s *CatalogService) Me(ctx context.Context, apiUser, apiPass string) (domai
 		copy(cp, levels)
 		dbs[name] = cp
 	}
-	return domain.MeResponse{Username: user.Username, Databases: dbs}, nil
+	return domain.MeResponse{
+		Username:     user.Username,
+		Unrestricted: user.Unrestricted,
+		Databases:    dbs,
+	}, nil
 }
 
 func (s *CatalogService) ServerConfig(ctx context.Context, apiUser, apiPass, workstation string) (domain.ServerConfigResponse, error) {

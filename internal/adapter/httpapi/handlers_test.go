@@ -36,6 +36,23 @@ func (memAuth) Authenticate(_ context.Context, username, password string) (domai
 	return domain.User{}, domain.ErrUnauthorized
 }
 
+func (a memAuth) AccessFor(_ context.Context, username string, _ domain.Workstation) (domain.DBAccess, error) {
+	pass := ""
+	switch username {
+	case "librarian":
+		pass = "secret"
+	case "reader":
+		pass = "reader"
+	default:
+		return domain.DBAccess{}, domain.ErrUnauthorized
+	}
+	u, err := a.Authenticate(context.Background(), username, pass)
+	if err != nil {
+		return domain.DBAccess{}, err
+	}
+	return domain.DBAccess{Databases: u.Databases}, nil
+}
+
 type fakeCatalog struct {
 	search domain.SearchResult
 	info   domain.IrbisServerInfo

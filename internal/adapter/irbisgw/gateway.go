@@ -3,6 +3,7 @@ package irbisgw
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -334,6 +335,102 @@ func (g *Gateway) GlobalCorrection(ctx context.Context, sess ports.Session, data
 		return domain.GblResult{}, mapErr(err)
 	}
 	return domain.GblResult{Lines: lines}, nil
+}
+
+// IrbisUserInfo is a client_m entry used by ACL auth.
+type IrbisUserInfo struct {
+	Name     string
+	Password string
+	// ArmIni maps ARM letter → ini filename; missing/empty = ARM denied.
+	ArmIni map[domain.Workstation]string
+}
+
+// GetUserList loads client_m via admin command +9.
+func (g *Gateway) GetUserList(ctx context.Context, sess ports.Session) ([]IrbisUserInfo, error) {
+	c := g.client(sess, "")
+	var out []IrbisUserInfo
+	err := c.Do(ctx, func(conn *irbis.Connection) error {
+		users := conn.GetUserList()
+		if e := conn.Err(); e != nil {
+			return e
+		}
+		out = make([]IrbisUserInfo, 0, len(users))
+		for _, u := range users {
+			rec := IrbisUserInfo{
+				Name:     u.Name,
+				Password: u.Password,
+				ArmIni:   make(map[domain.Workstation]string, 6),
+			}
+			setArm := func(arm domain.Workstation, ini string) {
+				ini = strings.TrimSpace(ini)
+				if ini != "" {
+					rec.ArmIni[arm] = ini
+				}
+			}
+			setArm(domain.ARMCataloger, u.Cataloger)
+			setArm(domain.ARMReader, u.Reader)
+			setArm(domain.ARMCirculation, u.Circulation)
+			setArm(domain.ARMAcquisitions, u.Acquisitions)
+			setArm(domain.ARMProvision, u.Provision)
+			setArm(domain.ARMAdministrator, u.Administrator)
+			out = append(out, rec)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return out, nil
+}
+
+// ReadIniDBNameCat reads DBNNAMECAT from Private, then Main.
+func (g *Gateway) ReadIniDBNameCat(ctx context.Context, sess ports.Session, specification string) (string, error) {
+	c := g.client(sess, "")
+	var value string
+	err := c.Do(ctx, func(conn *irbis.Connection) error {
+		ini := conn.ReadIniFile(specification)
+		if e := conn.Err(); e != nil {
+			return e
+		}
+		if ini == nil {
+			return nil
+		}
+		value = strings.TrimSpace(ini.GetValue("Private", "DBNNAMECAT", ""))
+		if value == "" {
+			value = strings.TrimSpace(ini.GetValue("Main", "DBNNAMECAT", ""))
+		}
+		return nil
+	})
+	if err != nil {
+		return "", mapErr(err)
+	}
+	return value, nil
+}
+
+// ReadDatabaseMenu reads a .mnu (e.g. 1..db_user.mnu) into DatabaseInfo list.
+func (g *Gateway) ReadDatabaseMenu(ctx context.Context, sess ports.Session, specification string) ([]domain.DatabaseInfo, error) {
+	c := g.client(sess, "")
+	var out []domain.DatabaseInfo
+	err := c.Do(ctx, func(conn *irbis.Connection) error {
+		dbs := conn.ListDatabases(specification)
+		if e := conn.Err(); e != nil {
+			return e
+		}
+		out = make([]domain.DatabaseInfo, 0, len(dbs))
+		for i := range dbs {
+			out = append(out, domain.DatabaseInfo{
+				Name:        dbs[i].Name,
+				Description: dbs[i].Description,
+				ReadOnly:    dbs[i].ReadOnly,
+				MaxMFN:      dbs[i].MaxMfn,
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return out, nil
 }
 
 func (g *Gateway) ServerInfo(ctx context.Context, sess ports.Session) (domain.IrbisServerInfo, error) {

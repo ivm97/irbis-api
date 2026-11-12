@@ -666,6 +666,9 @@ components:
       required: [username, databases]
       properties:
         username: { type: string }
+        unrestricted:
+          type: boolean
+          description: Local AUTH_USERS file with empty/* ACL — any database, ARM ignored
         databases:
           type: object
           additionalProperties:

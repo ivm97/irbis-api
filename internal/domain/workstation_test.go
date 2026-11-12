@@ -37,4 +37,9 @@ func TestUserCan(t *testing.T) {
 	if u.Can("RDR", AccessRead) {
 		t.Fatal("missing db")
 	}
+
+	free := User{Unrestricted: true}
+	if !free.Can("ANY", AccessWrite) || !free.Can("x", AccessRead) {
+		t.Fatal("unrestricted")
+	}
 }

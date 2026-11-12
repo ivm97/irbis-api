@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestLoad_FromDotEnv(t *testing.T) {
@@ -72,12 +73,32 @@ func TestParseHostPort(t *testing.T) {
 	}
 }
 
-func TestLoad_RequiresUsers(t *testing.T) {
-	clearEnv(t, "AUTH_USERS", "AUTH_USERS_FILE", "ENV_FILE", "IRBIS_WORKSTATION", "IRBIS_ADDR")
+func TestLoad_RequiresUsersOrService(t *testing.T) {
+	clearEnv(t, "AUTH_USERS", "AUTH_USERS_FILE", "ENV_FILE", "IRBIS_WORKSTATION", "IRBIS_ADDR",
+		"IRBIS_SERVICE_USERNAME", "IRBIS_SERVICE_PASSWORD")
 	t.Setenv("ENV_FILE", filepath.Join(t.TempDir(), "missing.env"))
 	_, err := Load()
 	if err == nil {
 		t.Fatal("expected error")
+	}
+}
+
+func TestLoad_ServiceCredentialsOK(t *testing.T) {
+	clearEnv(t, "AUTH_USERS", "AUTH_USERS_FILE", "ENV_FILE",
+		"IRBIS_SERVICE_USERNAME", "IRBIS_SERVICE_PASSWORD",
+		"IRBIS_INI_PATH", "IRBIS_MENU_PATH", "IRBIS_ACL_CACHE_TTL", "IRBIS_USER_DB_MENU_PATTERN")
+	t.Setenv("ENV_FILE", filepath.Join(t.TempDir(), "missing.env"))
+	t.Setenv("IRBIS_SERVICE_USERNAME", "admin")
+	t.Setenv("IRBIS_SERVICE_PASSWORD", "secret")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Irbis.ServiceUsername != "admin" || cfg.Irbis.IniPathCode != "0" || cfg.Irbis.MenuPathCode != "1" {
+		t.Fatalf("%+v", cfg.Irbis)
+	}
+	if cfg.Irbis.ACLCacheTTL != 5*time.Minute {
+		t.Fatalf("ttl=%v", cfg.Irbis.ACLCacheTTL)
 	}
 }
 

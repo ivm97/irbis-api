@@ -34,10 +34,6 @@ func (h *Handler) login(c echo.Context) error {
 	if err := c.Bind(&body); err != nil || body.Username == "" || body.Password == "" {
 		return writeErr(c, domain.ErrInvalidInput)
 	}
-	res, err := h.svc.Me(c.Request().Context(), body.Username, body.Password)
-	if err != nil {
-		return writeErr(c, err)
-	}
 	arm, err := domain.NormalizeWorkstation(body.Workstation, "")
 	if err != nil {
 		return writeErr(c, err)
@@ -45,6 +41,10 @@ func (h *Handler) login(c echo.Context) error {
 	ws := ""
 	if body.Workstation != "" {
 		ws = string(arm)
+	}
+	res, err := h.svc.Me(c.Request().Context(), body.Username, body.Password, ws)
+	if err != nil {
+		return writeErr(c, err)
 	}
 	setAuthCookies(c, body.Username, body.Password, ws)
 	return c.JSON(http.StatusOK, res)
@@ -57,7 +57,7 @@ func (h *Handler) logout(c echo.Context) error {
 
 func (h *Handler) me(c echo.Context) error {
 	user, pass := credentials(c)
-	res, err := h.svc.Me(c.Request().Context(), user, pass)
+	res, err := h.svc.Me(c.Request().Context(), user, pass, workstation(c))
 	if err != nil {
 		return writeErr(c, err)
 	}
@@ -262,7 +262,7 @@ func (h *Handler) listTerms(c echo.Context) error {
 
 func (h *Handler) listPrintTemplates(c echo.Context) error {
 	user, pass := credentials(c)
-	if _, err := h.svc.Me(c.Request().Context(), user, pass); err != nil {
+	if _, err := h.svc.Me(c.Request().Context(), user, pass, workstation(c)); err != nil {
 		return writeErr(c, err)
 	}
 	names, err := h.svc.ListPrintTemplates()
